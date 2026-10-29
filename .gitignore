@@ -1,0 +1,8 @@
+# секреты и рабочие файлы не коммитим
+config.json
+videos/
+watcher.log
+.cache/
+__pycache__/
+.venv/
+*.pyc

@@ -1,0 +1,69 @@
+name: tiktok-watch
+
+# Проверка новых видео раз в 10 минут. Сервер не нужен, оплата не нужна.
+# Расписание GitHub может опаздывать на 5–20 минут — это нормально.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tiktok-watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Установить зависимости
+        run: pip install -q yt-dlp curl_cffi
+
+      - name: Проверить новые видео
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BLOGGERS: ${{ vars.BLOGGERS || 'kz_lemon4ik,chopocompik_off' }}
+          INTERVAL_MINUTES: "10"
+        run: python tiktok_watch.py --once
+
+      - name: Сохранить состояние и не дать GitHub отключить расписание
+        run: |
+          git config user.name "tiktok-watcher"
+          git config user.email "tiktok-watcher@users.noreply.github.com"
+
+          # 1) state.json — чтобы не присылать одно и то же видео дважды
+          git add -f state.json 2>/dev/null || true
+
+          # 2) keepalive — GitHub выключает scheduled workflows после 60 дней
+          #    без активности в репозитории, поэтому раз в 3 дня делаем коммит
+          now=$(date +%s)
+          if [ -f .keepalive ]; then
+            last=$(git log -1 --format=%ct -- .keepalive 2>/dev/null || echo 0)
+          else
+            last=0
+          fi
+          if [ "${last:-0}" -eq 0 ] || [ $((now - last)) -gt 259200 ]; then
+            date -u +%FT%TZ > .keepalive
+            git add .keepalive
+          fi
+
+          if ! git diff --cached --quiet; then
+            git commit -m "state: $(date -u +%FT%TZ)"
+            git push
+          else
+            echo "Изменений нет"
+          fi

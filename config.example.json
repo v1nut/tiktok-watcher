@@ -1,0 +1,20 @@
+{
+  "bloggers": [
+    "kz_lemon4ik",
+    "chopocompik_off"
+  ],
+  "interval_minutes": 10,
+  "videos_per_check": 20,
+  "download_video": true,
+  "download_quality": "best",
+  "first_run_silent": true,
+  "windows_toast": false,
+  "open_in_browser": false,
+  "discord_webhook": "",
+  "telegram": {
+    "bot_token": "",
+    "chat_id": "",
+    "proxy": ""
+  },
+  "keep_seen_ids": 1000
+}

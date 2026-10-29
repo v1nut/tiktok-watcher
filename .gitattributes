@@ -1,0 +1,6 @@
+# Единые переносы строк: скрипты и workflow должны быть LF
+* text=auto
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
